@@ -2,7 +2,7 @@ import {Mixins, Register, Reflect} from '../../mixins.js';
 import Template from './template.js';
 import EventBus from '../../eventbus.js';
 import Model from '../settings/model.js';
-import {drawBoundingBox, drawKeypoints, drawSkeleton, toggleLoadingUI} from "../../../demo_util.js";
+import {drawBoundingBox, drawKeypoints, drawSkeleton, toggleLoadingUI} from "./demo_util.js";
 import * as posenet from "@tensorflow-models/posenet";
 
 export default class Video extends HTMLElement {
