@@ -2,7 +2,8 @@ import {Mixins, Register, Reflect} from '../../mixins.js';
 import Template from './template.js';
 import EventBus from '../../eventbus.js';
 import Model from '../settings/model.js';
-import {drawBoundingBox, drawKeypoints, drawSkeleton, toggleLoadingUI} from "./demo_util.js";
+import {drawBoundingBox, drawKeypoints, drawSegment, drawSkeleton} from "./demo_util.js";
+import Skeleton from '../../skeleton.js';
 import * as posenet from "@tensorflow-models/posenet";
 
 export default class Video extends HTMLElement {
@@ -145,7 +146,14 @@ export default class Video extends HTMLElement {
                         drawKeypoints(keypoints, minPartConfidence, this.ctx);
                     }
                     if (this.model.output.showSkeleton) {
-                        drawSkeleton(keypoints, minPartConfidence, this.ctx);
+                        //drawSkeleton(keypoints, minPartConfidence, this.ctx);
+                        const adjacentKeyPoints = posenet.getAdjacentKeyPoints(keypoints, minPoseConfidence);
+                        adjacentKeyPoints.forEach((keypoints) => {
+                            Skeleton.draw(keypoints[0], keypoints[1], this.ctx);
+                            /*drawSegment(
+                                toTuple(keypoints[0].position), toTuple(keypoints[1].position), color,
+                                scale, ctx);*/
+                        });
                     }
                     if (this.model.output.showBoundingBox) {
                         drawBoundingBox(keypoints, this.ctx);

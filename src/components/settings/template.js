@@ -6,7 +6,7 @@ import Model from './model.js';
 import {Switch} from '@spectrum-web-components/switch/lib/index';
 import {Button} from '@spectrum-web-components/button/lib/index';
 import Theme from '@spectrum-web-components/themes/lib/theme-light.css.js';
-import {RAIL_RIGHT_CLOSE, RAIL_RIGHT_OPEN} from "../../icons.js";
+import {RAIL_RIGHT_LEFT, RAIL_RIGHT_RIGHT} from "../../icons.js";
 
 export default {
     render(scope, model) {
@@ -40,7 +40,7 @@ export default {
                     </div>
                     
                     <sp-action-button quiet @click=${ e => scope.onToggleMenu()}>
-                        <svg slot="icon" role="img">${ scope.classList.contains('expanded') ? RAIL_RIGHT_OPEN : RAIL_RIGHT_CLOSE}</svg>
+                        <svg slot="icon" role="img">${ scope.classList.contains('expanded') ? RAIL_RIGHT_RIGHT : RAIL_RIGHT_LEFT}</svg>
                     </sp-action-button>`;
     },
 
@@ -72,6 +72,7 @@ export default {
                 background-color: white;
                 overflow-y: scroll;
                 position: relative;
+                padding: 15px;
             }
    
             .hidden {

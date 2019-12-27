@@ -32,7 +32,6 @@ export const Reflect = function(clazz, options) {
         for (let c = 0; c < props.length; c++) {
             decorators.push({ name: props[c], accessors: {
                     set: function (val) {
-                        console.log('set a val', val)
                         const old = this.getAttribute(props[c]);
                         if (val === false) {
                             this.removeAttribute(props[c]);
