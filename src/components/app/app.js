@@ -2,6 +2,7 @@ import {Mixins, Register} from '../../mixins.js';
 import Template from './template.js';
 import PartEditor from "../parteditor/parteditor.js";
 import AssetLibrary from "../assetlibrary/assetlibrary.js";
+import {QueryString} from "../../querystring.js";
 
 export default class App extends HTMLElement {
     static get observedAttributes() {
@@ -31,7 +32,11 @@ export default class App extends HTMLElement {
         });
 
         const video = this.shadowRoot.querySelector('dy-video');
-        video.source = 'test2.mp4';
+        if (QueryString('video')) {
+            video.source = QueryString('video');
+        } else {
+            video.camera =  true;
+        }
     }
 }
 

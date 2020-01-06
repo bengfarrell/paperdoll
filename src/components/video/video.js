@@ -1,6 +1,7 @@
 import {Mixins, Register, Reflect} from '../../mixins.js';
 import Template from './template.js';
 import EventBus from '../../eventbus.js';
+import Capture from '../capture/capture.js';
 import Model from '../settings/model.js';
 import {drawBoundingBox, drawKeypoints, drawSegment, drawSkeleton} from "./demo_util.js";
 import Skeleton from '../../skeleton.js';
@@ -11,30 +12,17 @@ export default class Video extends HTMLElement {
         return ['camera', 'source']
     }
 
-    propertyChangedCallback(name, oldval, newval) {
+    async propertyChangedCallback(name, oldval, newval) {
         switch (name) {
             case 'source':
                 if (newval !== oldval) {
                     this.videoEl.src = newval;
                 }
-                this.videoEl.onloadedmetadata = (event) => {
-                    this.model.width = event.target.videoWidth;
-                    this.model.height = event.target.videoHeight;
-                    this.videoEl.width = this.model.width;
-                    this.videoEl.height = this.model.height;
-                    this.canvasEl.width = this.model.width;
-                    this.canvasEl.height = this.model.height;
-                };
-                this.videoEl.onloadeddata = () => {
-                    this.videoEl.play();
-                    this.model.playing = true;
-                };
                 break;
             case 'camera':
-                const stream = navigator.mediaDevices.getUserMedia({
+                const stream = await navigator.mediaDevices.getUserMedia({
                     'audio': false,
                     'video': {
-                        facingMode: 'user',
                         width: this.model.width,
                         height: this.model.height,
                     },
@@ -72,10 +60,45 @@ export default class Video extends HTMLElement {
         this.loadPoseNet();
         this.poseDetectionFrame();
 
+        this.videoEl.onloadedmetadata = (event) => {
+            const bounds = this.getBoundingClientRect();
+            if (bounds.width > bounds.height) {
+                this.model.width = bounds.width;
+                this.model.height = bounds.width * event.target.videoHeight / event.target.videoWidth;
+            } else {
+                this.model.height = bounds.height;
+                this.model.width = bounds.height * event.target.videoHeight / event.target.videoWidth;
+            }
+            this.videoEl.width = this.model.width;
+            this.videoEl.height = this.model.height;
+            this.canvasEl.width = this.model.width;
+            this.canvasEl.height = this.model.height;
+        };
+
+        this.videoEl.onloadeddata = () => {
+            this.videoEl.play();
+            this.model.playing = true;
+        };
+
         new EventBus().addEventListener(Model.CHANGE_SETTINGS, e => {
             // only the following keys require reloading of posenet
             if (['architecture', 'outputStride', 'multiplier', 'inputResolution', 'quantBytes'].indexOf(e.detail.key) !== -1) {
                 this.loadPoseNet();
+            }
+        });
+
+        new EventBus().addEventListener(Capture.TAKE_PHOTO, e => {
+            const a = document.createElement('a');
+            a.setAttribute('download', 'capture.png');
+            a.setAttribute('href', this.canvasEl.toDataURL("image/png").replace("image/png", "image/octet-stream"));
+            a.click();
+        });
+
+        new EventBus().addEventListener(Capture.RECORD_VIDEO, e => {
+            if (e.detail.recording) {
+                this.startRecording();
+            } else {
+                this.stopRecording();
             }
         });
     }
@@ -148,12 +171,17 @@ export default class Video extends HTMLElement {
                     if (this.model.output.showSkeleton) {
                         //drawSkeleton(keypoints, minPartConfidence, this.ctx);
                         const adjacentKeyPoints = posenet.getAdjacentKeyPoints(keypoints, minPoseConfidence);
+
+                        const points = {};
                         adjacentKeyPoints.forEach((keypoints) => {
-                            Skeleton.draw(keypoints[0], keypoints[1], this.ctx);
+                            points[keypoints[0].part] = keypoints[0];
+                            points[keypoints[1].part] = keypoints[1];
+                            Skeleton.drawLimb(keypoints[0], keypoints[1], this.ctx);
                             /*drawSegment(
                                 toTuple(keypoints[0].position), toTuple(keypoints[1].position), color,
                                 scale, ctx);*/
                         });
+                        Skeleton.drawTorso(points, this.ctx);
                     }
                     if (this.model.output.showBoundingBox) {
                         drawBoundingBox(keypoints, this.ctx);
@@ -164,6 +192,48 @@ export default class Video extends HTMLElement {
 
         requestAnimationFrame( () => this.poseDetectionFrame());
     }
+
+    startRecording() {
+        let options = {mimeType: 'video/webm'};
+        let sourceBuffer;
+        const recordedBlobs = [];
+        const stream = this.canvasEl.captureStream();
+        this.mediaRecorder = new MediaRecorder(stream, options);
+        this.mediaRecorder.onstop = (event) => {
+            const superBuffer = new Blob(recordedBlobs, {type: 'video/webm'});
+            const video = document.createElement('video');
+            video.src = window.URL.createObjectURL(superBuffer);
+
+            const blob = new Blob(recordedBlobs, {type: 'video/webm'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'test.webm';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        };
+        this.mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+                recordedBlobs.push(event.data);
+            }
+        };
+        this.mediaRecorder.start(100); // collect 100ms of data
+        const mediaSource = new MediaSource();
+        mediaSource.addEventListener('sourceopen', () => {
+            sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
+        }, false);
+    }
+
+    stopRecording() {
+        this.mediaRecorder.stop();
+        console.log('Stop Recording');
+    }
+
 }
 
 Register('dy-video', Video, Mixins);

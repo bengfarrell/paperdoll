@@ -3,6 +3,7 @@ import Video from "../video/video.js";
 import Settings from '../settings/settings.js';
 import AssetLibrary from "../assetlibrary/assetlibrary.js";
 import PartEditor from "../parteditor/parteditor.js";
+import Capture from "../capture/capture.js";
 import {Theme} from '@spectrum-web-components/themes/lib/index';
 
 export default {
@@ -21,6 +22,7 @@ export default {
                                 <dy-part-editor></dy-part-editor>
                             </div>
                         </div>
+                        <dy-capture></dy-capture>
                     </sp-theme>`;
     },
 
@@ -54,6 +56,18 @@ export default {
                 background-color: white;
                 position: absolute;
                 display: inline-block;
+            }
+            
+            dy-capture {
+                position: absolute;
+                top: 0;
+                left: 50%;
+                background-color: white;
+                border-bottom-left-radius: 15px;
+                border-bottom-right-radius: 15px;
+                border-style: solid;
+                border-width: 1px;
+                border-color: var(--spectrum-global-color-gray-600);
             }
             
             dy-part-editor {
@@ -99,7 +113,7 @@ export default {
             dy-asset-library.expanded {
                 background-color: white;
                 margin-right: 0;
-                border-right-color: #E1E1E1;
+                border-left-color: #E1E1E1;
             }
         </style>`;
     }

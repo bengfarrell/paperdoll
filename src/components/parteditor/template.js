@@ -40,8 +40,8 @@ export default {
                         <canvas id="imaging"></canvas>
                     </div>
                     <div id="bottom-controls">
-                        <sp-button variant="primary" @click=${e => Skeleton.export()}">Export</sp-button>
-                        <sp-button @click=${e => scope.onDismiss(e)}">Done</sp-button>
+                        <sp-button variant="primary" @click=${e => Skeleton.export()}>Export</sp-button>
+                        <sp-button @click=${e => scope.onDismiss(e)}>Done</sp-button>
                     </div>`;
     },
 

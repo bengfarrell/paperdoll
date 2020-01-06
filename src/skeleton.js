@@ -116,7 +116,11 @@ export default {
         }
     },
 
-    draw(p1, p2, ctx) {
+    drawTorso(points, ctx) {
+        //console.log(points['leftShoulder'], points['rightHip']);
+    },
+
+    drawLimb(p1, p2, ctx) {
         const part = this.resolvePointsToSegment(p1, p2);
         if (!part) { return; }
         let asset = assets.filter( a => { return a.partname === part.name });
@@ -155,7 +159,7 @@ export default {
         ctx.save();
         ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
         ctx.drawImage(asset.image, -pxTop.x, -pxTop.y);
-        ctx.restore()
+        ctx.restore();
     },
 
     async loadAssetManifest(file) {

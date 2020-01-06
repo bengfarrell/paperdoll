@@ -17,7 +17,7 @@ export default {
                             <p>Drag and drop or choose your assets</p>
                             <sp-button @click=${ e => scope.onFileInputClick()} variant="cta">Load assets</sp-button>
                             <input type="file" id="file-upload" multiple accept="image/*,application/json" @change=${ (e) => scope.onFileInputChange(e)}>
-                            <sp-button variant="primary" @click=${e => Skeleton.export()}">Export</sp-button>
+                            <sp-button variant="primary" @click=${e => Skeleton.export()}>Export</sp-button>
                         </div>
                     </div>
                     
