@@ -176,12 +176,17 @@ export default class Video extends HTMLElement {
                         adjacentKeyPoints.forEach((keypoints) => {
                             points[keypoints[0].part] = keypoints[0];
                             points[keypoints[1].part] = keypoints[1];
-                            Skeleton.drawLimb(keypoints[0], keypoints[1], this.ctx);
-                            /*drawSegment(
-                                toTuple(keypoints[0].position), toTuple(keypoints[1].position), color,
-                                scale, ctx);*/
                         });
                         Skeleton.drawTorso(points, this.ctx);
+                        Skeleton.drawLimb(points.rightShoulder, points.rightElbow, this.ctx);
+                        Skeleton.drawLimb(points.rightElbow, points.rightWrist, this.ctx);
+                        Skeleton.drawLimb(points.leftShoulder, points.leftElbow, this.ctx);
+                        Skeleton.drawLimb(points.leftElbow, points.leftWrist, this.ctx);
+
+                        Skeleton.drawLimb(points.rightHip, points.rightKnee, this.ctx);
+                        Skeleton.drawLimb(points.rightKnee, points.rightAnkle, this.ctx);
+                        Skeleton.drawLimb(points.leftHip, points.leftKnee, this.ctx);
+                        Skeleton.drawLimb(points.leftKnee, points.leftAnkle, this.ctx);
                     }
                     if (this.model.output.showBoundingBox) {
                         drawBoundingBox(keypoints, this.ctx);

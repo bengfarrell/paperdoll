@@ -1,4 +1,7 @@
+import QuadFitter from './quadfitter.js';
+
 const assets = [];
+const quad = new QuadFitter();
 
 export default {
     get partsList() {
@@ -26,7 +29,7 @@ export default {
     get UPPER_RIGHT_ARM() { return { name: 'upper right arm', defaultPins: [ { name: 'top', x: .5, y: .1 }, { name: 'bottom', x: .5, y: .9 }] }},
     get LOWER_RIGHT_ARM() { return { name: 'lower right arm', defaultPins: [ { name: 'top', x: .5, y: .1 }, { name: 'bottom', x: .5, y: .9 }] }},
 
-    get TORSO() { return { name: 'torso' }},
+    get TORSO() { return { name: 'torso', defaultPins: [ { name: 'topleft', x: .1, y: .1 }, { name: 'topright', x: .9, y: .1 }, { name: 'bottomleft', x: .1, y: .9 }, { name: 'bottomright', x: .9, y: .9 }]}},
     get HEAD() { return { name: 'head' }},
 
     get assets() {
@@ -117,10 +120,43 @@ export default {
     },
 
     drawTorso(points, ctx) {
-        //console.log(points['leftShoulder'], points['rightHip']);
+        let asset = assets.find(a => a.partname === 'torso');
+        if (!asset) { return; }
+        if (quad.texture !== asset.image) {
+            quad.texture = asset.image;
+        }
+
+        if (points.leftShoulder && points.rightShoulder && points.leftHip && points.rightHip) {
+            const topLeftPin = asset.pins.filter( p => { return p.name === 'topleft'})[0];
+            const topRightPin = asset.pins.filter( p => { return p.name === 'topright'})[0];
+            const bottomLeftPin = asset.pins.filter( p => { return p.name === 'bottomleft'})[0];
+            const bottomRightPin = asset.pins.filter( p => { return p.name === 'bottomright'})[0];
+
+            const result = quad.render({
+                topLeft: {
+                    x: points.leftShoulder.position.x - topLeftPin.x * (points.rightShoulder.position.x - points.leftShoulder.position.x),
+                    y: points.leftShoulder.position.y - topLeftPin.y * (points.leftHip.position.y - points.leftShoulder.position.y)
+                },
+                topRight: {
+                    x: points.rightShoulder.position.x + (1-topRightPin.x) * (points.rightShoulder.position.x - points.leftShoulder.position.x),
+                    y: points.rightShoulder.position.y - topRightPin.y * (points.leftHip.position.y - points.leftShoulder.position.y)
+                },
+                bottomLeft: {
+                    x: points.leftHip.position.x - bottomLeftPin.x * (points.rightHip.position.x - points.leftHip.position.x),
+                    y: points.leftHip.position.y + (1-bottomLeftPin.y) * (points.leftHip.position.y - points.leftShoulder.position.y),
+                },
+                bottomRight: {
+                    x: points.rightHip.position.x + (1-bottomRightPin.x) * (points.rightHip.position.x - points.leftHip.position.x),
+                    y: points.rightHip.position.y + (1-bottomRightPin.y) * (points.rightHip.position.y - points.rightShoulder.position.y)
+                }
+            });
+
+            ctx.drawImage(result.canvas, result.x, result.y);
+        }
     },
 
     drawLimb(p1, p2, ctx) {
+        if (!p1 || !p2) { return; }
         const part = this.resolvePointsToSegment(p1, p2);
         if (!part) { return; }
         let asset = assets.filter( a => { return a.partname === part.name });
