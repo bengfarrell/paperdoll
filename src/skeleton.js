@@ -30,7 +30,7 @@ export default {
     get LOWER_RIGHT_ARM() { return { name: 'lower right arm', defaultPins: [ { name: 'top', x: .5, y: .1 }, { name: 'bottom', x: .5, y: .9 }] }},
 
     get TORSO() { return { name: 'torso', defaultPins: [ { name: 'topleft', x: .1, y: .1 }, { name: 'topright', x: .9, y: .1 }, { name: 'bottomleft', x: .1, y: .9 }, { name: 'bottomright', x: .9, y: .9 }]}},
-    get HEAD() { return { name: 'head' }},
+    get HEAD() { return { name: 'head', defaultPins: [ { name: 'lefteye', x: .25, y: .5 }, { name: 'righteye', x: .75, y: .5 }] }},
 
     get assets() {
         return assets;
@@ -153,6 +153,41 @@ export default {
 
             ctx.drawImage(result.canvas, result.x, result.y);
         }
+    },
+
+    drawHead(lEye, rEye, ctx) {
+        if (!lEye || !rEye) { return; }
+        let asset = assets.find(a => a.partname === 'head');
+        if (!asset) { return; }
+
+        const left = asset.pins.find( p => p.name === 'lefteye');
+        const right = asset.pins.find( p => p.name === 'righteye');
+        const pxLeft = { x: left.x * asset.width, y: left.y * asset.height };
+        const pxRight = { x: right.x * asset.width, y: (1-right.y) * asset.height };
+
+        const skeletonEyeDist = Math.sqrt( Math.pow(lEye.position.x - rEye.position.x, 2) + Math.pow(lEye.position.y - rEye.position.y, 2));
+        const assetEyeDist = Math.sqrt( Math.pow(pxLeft.x - pxRight.x, 2) + Math.pow(pxLeft.y - pxRight.y, 2));
+        const scale = skeletonEyeDist / assetEyeDist;
+
+        // angular difference between pivot points x and y values
+        const endPointAxisOffset = Math.asin((pxLeft.y - pxRight.y)/assetEyeDist );
+
+        // factor axis offset into angular different between p1 & p2
+        let rotation = ( Math.acos((lEye.position.y - rEye.position.y)/skeletonEyeDist ) ) - Math.PI/2;
+        rotation -= endPointAxisOffset;
+
+        const m = [
+            Math.cos(rotation) * scale,
+            Math.sin(rotation) * scale,
+            -Math.sin(rotation) * scale,
+            Math.cos(rotation) * scale,
+            lEye.position.x,
+            rEye.position.y
+        ];
+        ctx.save();
+        ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+        ctx.drawImage(asset.image, -pxLeft.x, -pxRight.y);
+        ctx.restore();
     },
 
     drawLimb(p1, p2, ctx) {

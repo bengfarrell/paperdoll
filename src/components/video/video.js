@@ -89,7 +89,7 @@ export default class Video extends HTMLElement {
 
         new EventBus().addEventListener(Capture.TAKE_PHOTO, e => {
             const a = document.createElement('a');
-            a.setAttribute('download', 'capture.png');
+            a.setAttribute('download', `${e.detail}.png`);
             a.setAttribute('href', this.canvasEl.toDataURL("image/png").replace("image/png", "image/octet-stream"));
             a.click();
         });
@@ -165,9 +165,6 @@ export default class Video extends HTMLElement {
             // scores
             poses.forEach(({score, keypoints}) => {
                 if (score >= minPoseConfidence) {
-                    if (this.model.output.showPoints) {
-                        drawKeypoints(keypoints, minPartConfidence, this.ctx);
-                    }
                     if (this.model.output.showSkeleton) {
                         //drawSkeleton(keypoints, minPartConfidence, this.ctx);
                         const adjacentKeyPoints = posenet.getAdjacentKeyPoints(keypoints, minPoseConfidence);
@@ -178,6 +175,7 @@ export default class Video extends HTMLElement {
                             points[keypoints[1].part] = keypoints[1];
                         });
                         Skeleton.drawTorso(points, this.ctx);
+                        Skeleton.drawHead(keypoints.find( o => o.part === 'leftEye'), keypoints.find( o => o.part === 'rightEye'), this.ctx);
                         Skeleton.drawLimb(points.rightShoulder, points.rightElbow, this.ctx);
                         Skeleton.drawLimb(points.rightElbow, points.rightWrist, this.ctx);
                         Skeleton.drawLimb(points.leftShoulder, points.leftElbow, this.ctx);
@@ -187,6 +185,9 @@ export default class Video extends HTMLElement {
                         Skeleton.drawLimb(points.rightKnee, points.rightAnkle, this.ctx);
                         Skeleton.drawLimb(points.leftHip, points.leftKnee, this.ctx);
                         Skeleton.drawLimb(points.leftKnee, points.leftAnkle, this.ctx);
+                    }
+                    if (this.model.output.showPoints) {
+                        drawKeypoints(keypoints, minPartConfidence, this.ctx);
                     }
                     if (this.model.output.showBoundingBox) {
                         drawBoundingBox(keypoints, this.ctx);

@@ -61,7 +61,7 @@ export default {
             dy-capture {
                 position: absolute;
                 top: 0;
-                left: 50%;
+                left: 33%;
                 background-color: white;
                 border-bottom-left-radius: 15px;
                 border-bottom-right-radius: 15px;
