@@ -26,8 +26,8 @@ self.addEventListener('message', (event) => {
  */
 self.__precacheManifest = [
   {
-    "url": "app-f3d3fbbf.js",
-    "revision": "f658a5b28d9d23c09c451bd98598fabf"
+    "url": "app-78cc1907.js",
+    "revision": "bfd1bded05c48f61a923401f74c4936c"
   },
   {
     "url": "focus-visible-7f07070e.js",
@@ -35,7 +35,7 @@ self.__precacheManifest = [
   },
   {
     "url": "index.html",
-    "revision": "07f1c66e885a48bf1b570f2b4a9fe2d6"
+    "revision": "c48ffc27628e1bbe8c329d2e402006b8"
   },
   {
     "url": "polyfills/custom-elements-es5-adapter.84b300ee818dce8b351c7cc7c100bcf7.js",
