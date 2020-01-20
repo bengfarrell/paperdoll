@@ -54,7 +54,7 @@ export default {
                             <div>
                                 <label for="file-input">
                                     <sp-link>Select a Sample Video</sp-link>
-                                    from your computer
+                                    &nbsp;from your computer
                                 </label>
                                 <input @change=${ e => scope.onChooseVideo(e)} type="file" id="file-input" style="display: none" />
                             </div>

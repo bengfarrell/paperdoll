@@ -1,5 +1,5 @@
 {
-  "name": "deyoung-heroes",
+  "name": "paperdoll",
   "version": "1.0.0",
   "dependencies": {
     "@open-wc/building-rollup": "^0.11.0",
@@ -19,9 +19,21 @@
     "dev": "npx es-dev-server --watch --node-resolve --open",
     "build": "node_modules/.bin/rollup -c rollup.config.js",
     "deploy": "node_modules/.bin/gh-pages -d dist",
-    "desktop-dev": "npm run build && ./node_modules/.bin/electron electron-main.js"
+    "desktop-dev": "npm run build && ./node_modules/.bin/electron index.js",
+    "desktop-pack": "electron-builder --dir",
+    "desktop-dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^7.1.9"
+    "electron": "^7.1.9",
+    "electron-builder": "^22.2.0"
+  },
+  "build": {
+    "directories": {
+      "output": "desktopdist"
+    },
+    "appId": "PaperDoll",
+    "mac": {
+      "category": "awesomeness"
+    }
   }
 }
