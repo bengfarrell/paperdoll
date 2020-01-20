@@ -8,7 +8,7 @@ export default {
 
     html(scope, model) {
         return html`<canvas></canvas>
-                    <video playsinline></videoplaysinline>`;
+                    <video playsinline loop></videoplaysinline>`;
     },
 
     css() {
