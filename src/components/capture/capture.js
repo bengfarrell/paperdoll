@@ -16,11 +16,7 @@ export default class Capture extends HTMLElement {
     }
 
     generateFilename() {
-        if (!this.model.sessionName) {
-            return '';
-        }
-
-        return this.model.sessionName + '_' + this.model.shareCode + '_' + this.model.photoCount;
+        return this.model.sessionName !== '' ? this.model.sessionName : 'unnamed' + '_' + this.model.shareCode + '_' + this.model.photoCount;
     }
 
     takePhoto() {

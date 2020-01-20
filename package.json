@@ -16,8 +16,12 @@
     "twgl.js": "^4.14.1"
   },
   "scripts": {
-    "dev": "npx es-dev-server --watch --node-resolve --open=test.html",
+    "dev": "npx es-dev-server --watch --node-resolve --open",
     "build": "node_modules/.bin/rollup -c rollup.config.js",
-    "deploy": "node_modules/.bin/gh-pages -d dist"
+    "deploy": "node_modules/.bin/gh-pages -d dist",
+    "desktop-dev": "npm run build && ./node_modules/.bin/electron electron-main.js"
+  },
+  "devDependencies": {
+    "electron": "^7.1.9"
   }
 }

@@ -19,7 +19,7 @@ export default {
             }
             
             video {
-                transform: scaleX(-1);
+                transform: scaleX(1);
                 display: none;
             }
         </style>`;

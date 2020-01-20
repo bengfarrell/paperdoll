@@ -3,40 +3,14 @@ import Template from './template.js';
 import EventBus from '../../eventbus.js';
 import Capture from '../capture/capture.js';
 import Model from '../settings/model.js';
+import VideoModel from './model.js';
 import {drawBoundingBox, drawKeypoints, drawSegment, drawSkeleton} from "./demo_util.js";
 import Skeleton from '../../skeleton.js';
 import * as posenet from "@tensorflow-models/posenet";
 
 export default class Video extends HTMLElement {
-    static get observedAttributes() {
-        return ['camera', 'source']
-    }
-
-    async propertyChangedCallback(name, oldval, newval) {
-        switch (name) {
-            case 'source':
-                if (newval !== oldval) {
-                    this.videoEl.src = newval;
-                }
-                break;
-            case 'camera':
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    'audio': false,
-                    'video': {
-                        width: this.model.width,
-                        height: this.model.height,
-                    },
-                });
-                this.videoEl.srcObject = stream;
-                break;
-        }
-    }
-
     async connectedCallback() {
         this.init(Template, {
-            width: 640,
-            height: 480,
-
             playing: false,
             net: null,
 
@@ -49,36 +23,72 @@ export default class Video extends HTMLElement {
             output: {
                 showVideo: true,
                 showSkeleton: true,
-                showPoints: true,
+                showPoints: false,
                 showBoundingBox: false,
             }
         });
         this.videoEl = this.shadowRoot.querySelector('video');
-        this.canvasEl = this.shadowRoot.querySelector('canvas');
-        this.ctx = this.canvasEl.getContext('2d');
+        this.displayCanvasEl = this.shadowRoot.querySelector('canvas');
+        this.displayctx = this.displayCanvasEl.getContext('2d');
+
+        this.fullsizeCanvas = document.createElement('canvas');
+        this.fullsizeContext = this.fullsizeCanvas.getContext('2d');
 
         this.loadPoseNet();
         this.poseDetectionFrame();
 
         this.videoEl.onloadedmetadata = (event) => {
+            // reset model dimensions for arbitrary loaded MP4
+            this.model.videoWidth = this.videoEl.videoWidth;
+            this.model.videoHeight = this.videoEl.videoHeight;
+
             const bounds = this.getBoundingClientRect();
-            if (bounds.width > bounds.height) {
-                this.model.width = bounds.width;
-                this.model.height = bounds.width * event.target.videoHeight / event.target.videoWidth;
-            } else {
-                this.model.height = bounds.height;
-                this.model.width = bounds.height * event.target.videoHeight / event.target.videoWidth;
-            }
-            this.videoEl.width = this.model.width;
-            this.videoEl.height = this.model.height;
-            this.canvasEl.width = this.model.width;
-            this.canvasEl.height = this.model.height;
+            this.videoEl.width = this.model.videoWidth;
+            this.videoEl.height = this.model.videoHeight;
+            this.fullsizeCanvas.width = this.model.videoWidth;
+            this.fullsizeCanvas.height = this.model.videoHeight;
+            this.displayCanvasEl.width = bounds.width;
+            this.displayCanvasEl.height = bounds.height;
         };
 
         this.videoEl.onloadeddata = () => {
             this.videoEl.play();
             this.model.playing = true;
         };
+
+        document.body.onresize = () => {
+            const bounds = this.getBoundingClientRect();
+            this.displayCanvasEl.width = bounds.width;
+            this.displayCanvasEl.height = bounds.height;
+        };
+
+        new EventBus().addEventListener(VideoModel.VIDEO_SOURCE_CHANGE, e => {
+            this.model.playing = false;
+
+            // video is uploaded, just set source and exit
+            if (VideoModel.currentDevice.id === 'uploaded') {
+                this.videoEl.srcObject = null;
+                this.videoEl.src = VideoModel.uploaded;
+                return;
+            }
+
+            // video is from camera - set the correct
+            const videosrc = {
+                width: VideoModel.preferredResolution.settings.width,
+                height: VideoModel.preferredResolution.settings.height,
+            };
+
+            if (VideoModel.currentDevice.id !== 'default') {
+                videosrc.deviceId = VideoModel.currentDevice.id
+            }
+
+            const stream = navigator.mediaDevices.getUserMedia({
+                'audio': false,
+                'video': videosrc
+            }).then( (stream) => {
+                this.videoEl.srcObject = stream;
+            });
+        });
 
         new EventBus().addEventListener(Model.CHANGE_SETTINGS, e => {
             // only the following keys require reloading of posenet
@@ -88,10 +98,22 @@ export default class Video extends HTMLElement {
         });
 
         new EventBus().addEventListener(Capture.TAKE_PHOTO, e => {
-            const a = document.createElement('a');
-            a.setAttribute('download', `${e.detail}.png`);
-            a.setAttribute('href', this.canvasEl.toDataURL("image/png").replace("image/png", "image/octet-stream"));
-            a.click();
+            const userAgent = navigator.userAgent.toLowerCase();
+            const filename = e.detail;
+            if (userAgent.indexOf(' electron/') > -1) {
+                // Electron-specific code
+                const fs = require('fs');
+                const os = require('os');
+                const binaryData = new Buffer(this.fullsizeCanvas.toDataURL("image/png").replace(/^data:image\/png;base64,/,""), 'base64').toString('binary');
+                fs.writeFile(`${os.homedir()}/Desktop/out/${filename}.png`, binaryData, 'binary',() => {
+                    console.log('file written', `${os.homedir()}/Desktop/out/${filename}.png`);
+                });
+            } else {
+                const a = document.createElement('a');
+                a.setAttribute('download', `${filename}.jpg`);
+                a.setAttribute('href', this.fullsizeCanvas.toDataURL("image/jpg", .7).replace("image/jpg", "image/octet-stream"));
+                a.click();
+            }
         });
 
         new EventBus().addEventListener(Capture.RECORD_VIDEO, e => {
@@ -101,6 +123,15 @@ export default class Video extends HTMLElement {
                 this.stopRecording();
             }
         });
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            'audio': false,
+            'video': {
+                width: VideoModel.preferredResolution.settings.width,
+                height: VideoModel.preferredResolution.settings.height,
+            },
+        });
+        this.videoEl.srcObject = stream;
     }
 
     loadPoseNet() {
@@ -150,14 +181,14 @@ export default class Video extends HTMLElement {
                     break;
             }
 
-            this.ctx.clearRect(0, 0, this.model.width, this.model.height);
+            this.fullsizeContext.clearRect(0, 0, this.model.videoWidth, this.model.videoHeight);
 
             if (this.model.output.showVideo) {
-                this.ctx.save();
-                this.ctx.scale(-1, 1);
-                this.ctx.translate(-this.model.width, 0);
-                this.ctx.drawImage(this.videoEl, 0, 0, this.model.width, this.model.height);
-                this.ctx.restore();
+                this.fullsizeContext.save();
+                this.fullsizeContext.scale(-1, 1);
+                this.fullsizeContext.translate(-this.model.videoWidth, 0);
+                this.fullsizeContext.drawImage(this.videoEl, 0, 0, this.model.videoWidth, this.model.videoHeight);
+                this.fullsizeContext.restore();
             }
 
             // For each pose (i.e. person) detected in an image, loop through the poses
@@ -174,71 +205,111 @@ export default class Video extends HTMLElement {
                             points[keypoints[0].part] = keypoints[0];
                             points[keypoints[1].part] = keypoints[1];
                         });
-                        Skeleton.drawTorso(points, this.ctx);
-                        Skeleton.drawHead(keypoints.find( o => o.part === 'leftEye'), keypoints.find( o => o.part === 'rightEye'), this.ctx);
-                        Skeleton.drawLimb(points.rightShoulder, points.rightElbow, this.ctx);
-                        Skeleton.drawLimb(points.rightElbow, points.rightWrist, this.ctx);
-                        Skeleton.drawLimb(points.leftShoulder, points.leftElbow, this.ctx);
-                        Skeleton.drawLimb(points.leftElbow, points.leftWrist, this.ctx);
+                        Skeleton.drawTorso(points, this.fullsizeContext);
+                        Skeleton.drawHead(keypoints.find( o => o.part === 'leftEye'), keypoints.find( o => o.part === 'rightEye'), this.fullsizeContext);
+                        Skeleton.drawLimb(points.rightShoulder, points.rightElbow, this.fullsizeContext);
+                        Skeleton.drawLimb(points.rightElbow, points.rightWrist, this.fullsizeContext);
+                        Skeleton.drawLimb(points.leftShoulder, points.leftElbow, this.fullsizeContext);
+                        Skeleton.drawLimb(points.leftElbow, points.leftWrist, this.fullsizeContext);
 
-                        Skeleton.drawLimb(points.rightHip, points.rightKnee, this.ctx);
-                        Skeleton.drawLimb(points.rightKnee, points.rightAnkle, this.ctx);
-                        Skeleton.drawLimb(points.leftHip, points.leftKnee, this.ctx);
-                        Skeleton.drawLimb(points.leftKnee, points.leftAnkle, this.ctx);
+                        Skeleton.drawLimb(points.rightHip, points.rightKnee, this.fullsizeContext);
+                        Skeleton.drawLimb(points.rightKnee, points.rightAnkle, this.fullsizeContext);
+                        Skeleton.drawLimb(points.leftHip, points.leftKnee, this.fullsizeContext);
+                        Skeleton.drawLimb(points.leftKnee, points.leftAnkle, this.fullsizeContext);
                     }
                     if (this.model.output.showPoints) {
-                        drawKeypoints(keypoints, minPartConfidence, this.ctx);
+                        drawKeypoints(keypoints, minPartConfidence, this.fullsizeContext);
                     }
                     if (this.model.output.showBoundingBox) {
-                        drawBoundingBox(keypoints, this.ctx);
+                        drawBoundingBox(keypoints, this.fullsizeContext);
                     }
                 }
             });
         }
 
+        const bounds = this.getBoundingClientRect();
+        const displaySize = {};
+        if (bounds.width > bounds.height) {
+            displaySize.width = bounds.width;
+            displaySize.height = bounds.width * this.model.videoHeight / this.model.videoWidth;
+        } else {
+            displaySize.height = bounds.height;
+            displaySize.width = bounds.height * this.model.videoHeight / this.model.videoWidth;
+        }
+
+        const drawSize = this.getSizeToFit(this.fullsizeCanvas.width, this.fullsizeCanvas.height, this.displayCanvasEl.width, this.displayCanvasEl.height);
+        this.displayctx.drawImage(this.fullsizeCanvas, 0, 0, this.fullsizeCanvas.width, this.fullsizeCanvas.height, (this.displayCanvasEl.width - drawSize.computedWidth)/2, (this.displayCanvasEl.height - drawSize.computedHeight)/2, drawSize.computedWidth, drawSize.computedHeight);
+
         requestAnimationFrame( () => this.poseDetectionFrame());
     }
 
-    startRecording() {
-        let options = {mimeType: 'video/webm'};
-        let sourceBuffer;
-        const recordedBlobs = [];
-        const stream = this.canvasEl.captureStream();
-        this.mediaRecorder = new MediaRecorder(stream, options);
-        this.mediaRecorder.onstop = (event) => {
-            const superBuffer = new Blob(recordedBlobs, {type: 'video/webm'});
-            const video = document.createElement('video');
-            video.src = window.URL.createObjectURL(superBuffer);
+    getSizeToFit(currentWidth, currentHeight, desiredWidth, desiredHeight) {
 
-            const blob = new Blob(recordedBlobs, {type: 'video/webm'});
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'test.webm';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            }, 100);
-        };
-        this.mediaRecorder.ondataavailable = (event) => {
-            if (event.data && event.data.size > 0) {
-                recordedBlobs.push(event.data);
-            }
-        };
-        this.mediaRecorder.start(100); // collect 100ms of data
-        const mediaSource = new MediaSource();
-        mediaSource.addEventListener('sourceopen', () => {
-            sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
-        }, false);
+        // get the aspect ratios in case we need to expand or shrink to fit
+        var imageAspectRatio    = currentWidth/currentHeight;
+        var targetAspectRatio   = desiredWidth/desiredHeight;
+
+        // no need to adjust the size if current size is square
+        var adjustedWidth       = desiredWidth;
+        var adjustedHeight      = desiredHeight;
+
+        // get the larger aspect ratio of the two
+        // if aspect ratio is 1 then no adjustment needed
+        if (imageAspectRatio > targetAspectRatio) {
+            adjustedHeight = desiredWidth / imageAspectRatio;
+        }
+        else if (imageAspectRatio < targetAspectRatio) {
+            adjustedWidth = desiredHeight * imageAspectRatio;
+        }
+
+        // set the adjusted size (same if square)
+        var newSizes = {};
+        newSizes.computedWidth = adjustedWidth;
+        newSizes.computedHeight = adjustedHeight;
+
+        return newSizes;
     }
 
-    stopRecording() {
-        this.mediaRecorder.stop();
-        console.log('Stop Recording');
-    }
+/*startRecording() {
+let options = {mimeType: 'video/webm'};
+let sourceBuffer;
+const recordedBlobs = [];
+const stream = this.canvasEl.captureStream();
+this.mediaRecorder = new MediaRecorder(stream, options);
+this.mediaRecorder.onstop = (event) => {
+const superBuffer = new Blob(recordedBlobs, {type: 'video/webm'});
+const video = document.createElement('video');
+video.src = window.URL.createObjectURL(superBuffer);
+
+const blob = new Blob(recordedBlobs, {type: 'video/webm'});
+const url = window.URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.style.display = 'none';
+a.href = url;
+a.download = 'test.webm';
+document.body.appendChild(a);
+a.click();
+setTimeout(() => {
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}, 100);
+};
+this.mediaRecorder.ondataavailable = (event) => {
+if (event.data && event.data.size > 0) {
+    recordedBlobs.push(event.data);
+}
+};
+this.mediaRecorder.start(100); // collect 100ms of data
+const mediaSource = new MediaSource();
+mediaSource.addEventListener('sourceopen', () => {
+sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
+}, false);
+}
+
+stopRecording() {
+this.mediaRecorder.stop();
+console.log('Stop Recording');
+}*/
 
 }
 
