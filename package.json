@@ -16,7 +16,7 @@
     "twgl.js": "^4.14.1"
   },
   "scripts": {
-    "dev": "npx es-dev-server --watch --node-resolve --open=test.html",
+    "dev": "npx es-dev-server --watch --node-resolve --open=index.html",
     "build": "node_modules/.bin/rollup -c rollup.config.js",
     "deploy": "node_modules/.bin/gh-pages -d dist"
   }

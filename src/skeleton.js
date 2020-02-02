@@ -205,12 +205,14 @@ export default {
         const bottom = asset.pins.filter( p => { return p.name === 'bottom'})[0];
         const pxTop = { x: top.x * asset.width, y: top.y * asset.height };
         const pxBottom = { x: bottom.x * asset.width, y: (1-bottom.y) * asset.height };
+        const pxDist = Math.sqrt( Math.pow(pxTop.x - pxBottom.x, 2) + Math.pow(pxTop.y - (asset.height - pxBottom.y), 2));
 
         // angular difference between pivot points x and y values
-        const endPointAxisOffset = Math.asin((pxTop.x - pxBottom.x)/dist );
+        const endPointAxisOffset = Math.asin((pxTop.x - pxBottom.x)/pxDist );
 
         // factor axis offset into angular different between p1 & p2
         let rotation = ( Math.asin((p1.position.x - p2.position.x)/dist ) );
+
         if (p2.position.y < p1.position.y) {
             rotation = Math.PI - rotation;
         }
@@ -229,6 +231,7 @@ export default {
         ];
         ctx.save();
         ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+
         ctx.drawImage(asset.image, -pxTop.x, -pxTop.y);
         ctx.restore();
     },

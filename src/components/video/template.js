@@ -17,11 +17,6 @@ export default {
                 display: inline-block;
                 background-color: black;
             }
-            
-            video {
-                transform: scaleX(-1);
-                display: none;
-            }
         </style>`;
     }
 }
