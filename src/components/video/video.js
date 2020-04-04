@@ -153,79 +153,83 @@ export default class Video extends HTMLElement {
 
     async poseDetectionFrame() {
         if (this.model.playing && this.model.net) {
-            let poses = [];
-            let minPoseConfidence;
-            let minPartConfidence;
+            try {
+                let poses = [];
+                let minPoseConfidence;
+                let minPartConfidence;
 
-            switch (Model.algorithm) {
-                case 'single-pose':
-                    const pose = await this.model.net.estimatePoses(this.videoEl, {
-                        flipHorizontal: this.model.flipPoseHorizontal,
-                        decodingMethod: 'single-person'
-                    });
-                    poses = poses.concat(pose);
-                    minPoseConfidence = Model.singlePoseDetection.minPoseConfidence;
-                    minPartConfidence = Model.singlePoseDetection.minPartConfidence;
-                    break;
-                case 'multi-pose':
-                    let all_poses = await this.model.net.estimatePoses(this.videoEl, {
-                        flipHorizontal: this.model.flipPoseHorizontal,
-                        decodingMethod: 'multi-person',
-                        maxDetections: Model.multiPoseDetection.maxPoseDetections,
-                        scoreThreshold: Model.multiPoseDetection.minPartConfidence,
-                        nmsRadius: Model.multiPoseDetection.nmsRadius
-                    });
-
-                    poses = poses.concat(all_poses);
-                    minPoseConfidence = Model.multiPoseDetection.minPoseConfidence;
-                    minPartConfidence = Model.multiPoseDetection.minPartConfidence;
-                    break;
-            }
-
-            this.fullsizeContext.clearRect(0, 0, this.model.videoWidth, this.model.videoHeight);
-
-            if (this.model.output.showVideo) {
-                this.fullsizeContext.save();
-                this.fullsizeContext.scale(-1, 1);
-                this.fullsizeContext.translate(-this.model.videoWidth, 0);
-                this.fullsizeContext.drawImage(this.videoEl, 0, 0, this.model.videoWidth, this.model.videoHeight);
-                this.fullsizeContext.restore();
-            }
-
-            // For each pose (i.e. person) detected in an image, loop through the poses
-            // and draw the resulting skeleton and keypoints if over certain confidence
-            // scores
-            poses.forEach(({score, keypoints}) => {
-                if (score >= minPoseConfidence) {
-                    if (this.model.output.showSkeleton) {
-                        //drawSkeleton(keypoints, minPartConfidence, this.ctx);
-                        const adjacentKeyPoints = posenet.getAdjacentKeyPoints(keypoints, minPoseConfidence);
-
-                        const points = {};
-                        adjacentKeyPoints.forEach((keypoints) => {
-                            points[keypoints[0].part] = keypoints[0];
-                            points[keypoints[1].part] = keypoints[1];
+                switch (Model.algorithm) {
+                    case 'single-pose':
+                        const pose = await this.model.net.estimatePoses(this.videoEl, {
+                            flipHorizontal: this.model.flipPoseHorizontal,
+                            decodingMethod: 'single-person'
                         });
-                        Skeleton.drawTorso(points, this.fullsizeContext);
-                        Skeleton.drawHead(keypoints.find( o => o.part === 'leftEye'), keypoints.find( o => o.part === 'rightEye'), this.fullsizeContext);
-                        Skeleton.drawLimb(points.rightShoulder, points.rightElbow, this.fullsizeContext);
-                        Skeleton.drawLimb(points.rightElbow, points.rightWrist, this.fullsizeContext);
-                        Skeleton.drawLimb(points.leftShoulder, points.leftElbow, this.fullsizeContext);
-                        Skeleton.drawLimb(points.leftElbow, points.leftWrist, this.fullsizeContext);
+                        poses = poses.concat(pose);
+                        minPoseConfidence = Model.singlePoseDetection.minPoseConfidence;
+                        minPartConfidence = Model.singlePoseDetection.minPartConfidence;
+                        break;
+                    case 'multi-pose':
+                        let all_poses = await this.model.net.estimatePoses(this.videoEl, {
+                            flipHorizontal: this.model.flipPoseHorizontal,
+                            decodingMethod: 'multi-person',
+                            maxDetections: Model.multiPoseDetection.maxPoseDetections,
+                            scoreThreshold: Model.multiPoseDetection.minPartConfidence,
+                            nmsRadius: Model.multiPoseDetection.nmsRadius
+                        });
 
-                        Skeleton.drawLimb(points.rightHip, points.rightKnee, this.fullsizeContext);
-                        Skeleton.drawLimb(points.rightKnee, points.rightAnkle, this.fullsizeContext);
-                        Skeleton.drawLimb(points.leftHip, points.leftKnee, this.fullsizeContext);
-                        Skeleton.drawLimb(points.leftKnee, points.leftAnkle, this.fullsizeContext);
-                    }
-                    if (this.model.output.showPoints) {
-                        drawKeypoints(keypoints, minPartConfidence, this.fullsizeContext);
-                    }
-                    if (this.model.output.showBoundingBox) {
-                        drawBoundingBox(keypoints, this.fullsizeContext);
-                    }
+                        poses = poses.concat(all_poses);
+                        minPoseConfidence = Model.multiPoseDetection.minPoseConfidence;
+                        minPartConfidence = Model.multiPoseDetection.minPartConfidence;
+                        break;
                 }
-            });
+
+                this.fullsizeContext.clearRect(0, 0, this.model.videoWidth, this.model.videoHeight);
+
+                if (this.model.output.showVideo) {
+                    this.fullsizeContext.save();
+                    this.fullsizeContext.scale(-1, 1);
+                    this.fullsizeContext.translate(-this.model.videoWidth, 0);
+                    this.fullsizeContext.drawImage(this.videoEl, 0, 0, this.model.videoWidth, this.model.videoHeight);
+                    this.fullsizeContext.restore();
+                }
+
+                // For each pose (i.e. person) detected in an image, loop through the poses
+                // and draw the resulting skeleton and keypoints if over certain confidence
+                // scores
+                poses.forEach(({score, keypoints}) => {
+                    if (score >= minPoseConfidence) {
+                        if (this.model.output.showSkeleton) {
+                            //drawSkeleton(keypoints, minPartConfidence, this.ctx);
+                            const adjacentKeyPoints = posenet.getAdjacentKeyPoints(keypoints, minPoseConfidence);
+
+                            const points = {};
+                            adjacentKeyPoints.forEach((keypoints) => {
+                                points[keypoints[0].part] = keypoints[0];
+                                points[keypoints[1].part] = keypoints[1];
+                            });
+                            Skeleton.drawTorso(points, this.fullsizeContext);
+                            Skeleton.drawHead(keypoints.find(o => o.part === 'leftEye'), keypoints.find(o => o.part === 'rightEye'), this.fullsizeContext);
+                            Skeleton.drawLimb(points.rightShoulder, points.rightElbow, this.fullsizeContext);
+                            Skeleton.drawLimb(points.rightElbow, points.rightWrist, this.fullsizeContext);
+                            Skeleton.drawLimb(points.leftShoulder, points.leftElbow, this.fullsizeContext);
+                            Skeleton.drawLimb(points.leftElbow, points.leftWrist, this.fullsizeContext);
+
+                            Skeleton.drawLimb(points.rightHip, points.rightKnee, this.fullsizeContext);
+                            Skeleton.drawLimb(points.rightKnee, points.rightAnkle, this.fullsizeContext);
+                            Skeleton.drawLimb(points.leftHip, points.leftKnee, this.fullsizeContext);
+                            Skeleton.drawLimb(points.leftKnee, points.leftAnkle, this.fullsizeContext);
+                        }
+                        if (this.model.output.showPoints) {
+                            drawKeypoints(keypoints, minPartConfidence, this.fullsizeContext);
+                        }
+                        if (this.model.output.showBoundingBox) {
+                            drawBoundingBox(keypoints, this.fullsizeContext);
+                        }
+                    }
+                });
+            } catch (err) {
+                console.log('missed frame');
+            }
         }
 
         const bounds = this.getBoundingClientRect();
