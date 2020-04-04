@@ -30,6 +30,10 @@ export default {
                 fill: red;
             }
             
+            sp-button {
+                margin-right: 5px;
+            }
+            
             .filename {
                 position: absolute;
                 display: inline-block;
