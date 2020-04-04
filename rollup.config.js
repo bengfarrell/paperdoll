@@ -12,7 +12,7 @@ config.plugins.push(
     rimraf.sync('dist'),
     copy({
         // copy over all images files
-        files: ['images/*.*'],
+        files: ['images/*.*', 'vincentprice.zip'],
         dest: 'dist',
         options: {
             // parents makes sure to preserve the original folder structure

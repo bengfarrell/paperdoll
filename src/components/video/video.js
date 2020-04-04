@@ -110,6 +110,7 @@ export default class Video extends HTMLElement {
                 });
             } else {
                 const a = document.createElement('a');
+                console.log(filename);
                 a.setAttribute('download', `${filename}.jpg`);
                 a.setAttribute('href', this.fullsizeCanvas.toDataURL("image/jpg", .7).replace("image/jpg", "image/octet-stream"));
                 a.click();
@@ -118,7 +119,7 @@ export default class Video extends HTMLElement {
 
         new EventBus().addEventListener(Capture.RECORD_VIDEO, e => {
             if (e.detail.recording) {
-                this.startRecording();
+                this.startRecording(e.detail.name);
             } else {
                 this.stopRecording();
             }
@@ -270,46 +271,46 @@ export default class Video extends HTMLElement {
         return newSizes;
     }
 
-/*startRecording() {
-let options = {mimeType: 'video/webm'};
-let sourceBuffer;
-const recordedBlobs = [];
-const stream = this.canvasEl.captureStream();
-this.mediaRecorder = new MediaRecorder(stream, options);
-this.mediaRecorder.onstop = (event) => {
-const superBuffer = new Blob(recordedBlobs, {type: 'video/webm'});
-const video = document.createElement('video');
-video.src = window.URL.createObjectURL(superBuffer);
+    startRecording(filename) {
+        let options = {mimeType: 'video/webm'};
+        let sourceBuffer;
+        const recordedBlobs = [];
+        const stream = this.displayCanvasEl.captureStream();
+        this.mediaRecorder = new MediaRecorder(stream, options);
+        this.mediaRecorder.onstop = (event) => {
+            const superBuffer = new Blob(recordedBlobs, {type: 'video/webm'});
+            const video = document.createElement('video');
+            video.src = window.URL.createObjectURL(superBuffer);
 
-const blob = new Blob(recordedBlobs, {type: 'video/webm'});
-const url = window.URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.style.display = 'none';
-a.href = url;
-a.download = 'test.webm';
-document.body.appendChild(a);
-a.click();
-setTimeout(() => {
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-}, 100);
-};
-this.mediaRecorder.ondataavailable = (event) => {
-if (event.data && event.data.size > 0) {
-    recordedBlobs.push(event.data);
-}
-};
-this.mediaRecorder.start(100); // collect 100ms of data
-const mediaSource = new MediaSource();
-mediaSource.addEventListener('sourceopen', () => {
-sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
-}, false);
-}
+            const blob = new Blob(recordedBlobs, {type: 'video/webm'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `${filename}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        };
+        this.mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+                recordedBlobs.push(event.data);
+            }
+        };
+        this.mediaRecorder.start(100); // collect 100ms of data
+        const mediaSource = new MediaSource();
+        mediaSource.addEventListener('sourceopen', () => {
+            sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
+        }, false);
+    }
 
-stopRecording() {
-this.mediaRecorder.stop();
-console.log('Stop Recording');
-}*/
+    stopRecording() {
+        this.mediaRecorder.stop();
+        console.log('Stop Recording');
+    }
 
 }
 

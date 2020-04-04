@@ -18,6 +18,7 @@ export default {
                             <sp-button @click=${ e => scope.onFileInputClick()} variant="cta">Load assets</sp-button>
                             <input type="file" id="file-upload" multiple accept="image/*,application/json" @change=${ (e) => scope.onFileInputChange(e)}>
                             <sp-button variant="primary" @click=${e => Skeleton.export()}>Export</sp-button>
+                            <p><a href="vincentprice.zip" download>Download sample asset set?</a></p>
                         </div>
                     </div>
                     
@@ -147,8 +148,7 @@ export default {
             li {
                 display: flex;
                 margin-bottom: 10px;
-            }
-                      
+            }       
         </style>`;
     }
 }
