@@ -16,7 +16,7 @@ Snap a photo or take a video if you can (might be akward to do by yourself while
 Any old PNG asset can be loaded in for each body part. Edit any asset to use the pin alignment tools on
 how the asset gets placed over the body. This is all done live while you edit!
 
-If you've imported a bunch of assets and you like your config, click export to snag a zip file that you can use later
+If you've imported a bunch of assets and you like your config, click export to snag a JSON file that you can use and upload later with your PNGs.
 
 The left side pane has some webcam options, as well as allowing you to use a video (mp4 only) rather than your live camera.
 Also available are as many Tensorflow pose settings as I could fit in the UI so you can play around.available
