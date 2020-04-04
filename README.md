@@ -1,12 +1,12 @@
 # paperdoll
 
 To use this demo available at https://bengfarrell.github.io/paperdoll, simply go to the link.
-It should ask for permission to use your webcam. Once this happens, you'll see yourself. It's not waiting
+It should ask for permission to use your webcam. Once this happens, you'll see yourself. It's now waiting
 for you to load in some assets.
 
 To do this, open the right side pane (arrow button to expand). Here, you can add some assets. For a quick
 demo, download the sample asset set by clicking the link. Once downloaded, unzip the file, and drag and drop
-all the assets (png and JSON) onto the drag/drop area. If you'd like to download now, it's at http://bengfarrell.github.io/paperdoll/vincentprice.zip
+all the assets (png and JSON) onto the drag/drop area (multiple files are accepted at once). If you'd like to download ahead of time, it's at http://bengfarrell.github.io/paperdoll/vincentprice.zip
 
 Now, step back to let the camera see your whole body. Paper doll parts will be overlaid on top of your
 arms, legs, torso and head!
