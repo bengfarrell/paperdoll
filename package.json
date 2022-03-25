@@ -24,7 +24,7 @@
     "desktop-dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^7.1.9",
+    "electron": "^13.6.6",
     "electron-builder": "^22.2.0"
   },
   "build": {
